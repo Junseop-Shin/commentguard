@@ -68,7 +68,8 @@ export const useFilterStore = defineStore('filters', () => {
 
   async function clearStats() {
     await resetStats()
-    store.value.stats = { total: 0, byKeyword: {}, since: Date.now() }
+    // Reload from storage to use the same 'since' timestamp written by resetStats
+    store.value = await loadStore()
   }
 
   return {

@@ -6,12 +6,33 @@ import { BOT_BLOCKED } from '../shared/types'
 
 export { BOT_BLOCKED }
 
+// Cache: flattened active preset keywords keyed by normalized form → original value.
+// Rebuilt when the store reference changes (store reload after settings update).
+let _cachedStore: FilterStore | null = null
+let _presetCache: Array<{ normalized: string; original: string }> = []
+
+function buildPresetCache(store: FilterStore): void {
+  _presetCache = []
+  for (const category of Object.values(store.presets)) {
+    if (!category.enabled) continue
+    for (const kw of category.keywords) {
+      _presetCache.push({ normalized: normalize(kw), original: kw })
+    }
+  }
+}
+
 export function shouldBlock(
   text: string,
   nickname: string,
   store: FilterStore,
 ): string | null {
   if (!store.enabled) return null
+
+  // Rebuild preset cache when store changes (reference equality check)
+  if (store !== _cachedStore) {
+    buildPresetCache(store)
+    _cachedStore = store
+  }
 
   const normalizedText = store.settings.useNormalize ? normalize(text) : text
   const normalizedNick = store.settings.useNormalize ? normalize(nickname) : nickname
@@ -24,13 +45,11 @@ export function shouldBlock(
     }
   }
 
-  // 2. Preset keywords
-  for (const category of Object.values(store.presets)) {
-    if (!category.enabled) continue
-    for (const kw of category.keywords) {
-      if (matchKeyword(normalizedText, kw, store.settings.useChosung)) {
-        return kw
-      }
+  // 2. Preset keywords (cached flat list)
+  for (const { normalized, original } of _presetCache) {
+    if (normalizedText.includes(normalized)) return original
+    if (store.settings.useChosung && isChosungOnly(original)) {
+      if (getChoseong(normalizedText).includes(original)) return original
     }
   }
 
