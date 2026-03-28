@@ -1,16 +1,28 @@
 {
   "manifest_version": 3,
-  "name": "YT Comment Filter",
-  "version": "0.1.0",
-  "description": "YouTube comment filter extension",
+  "name": "YT 댓글 필터",
+  "version": "1.0.0",
+  "description": "YouTube 댓글을 키워드, 닉네임, 봇 패턴으로 필터링합니다. 한글 초성 검색 지원.",
   "permissions": ["storage"],
-  "action": {
-    "default_popup": "popup.html"
-  },
+  "host_permissions": ["https://www.youtube.com/*"],
   "content_scripts": [
     {
       "matches": ["https://www.youtube.com/*"],
-      "js": ["content.js"]
+      "js": ["content.js"],
+      "run_at": "document_idle"
     }
-  ]
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
 }
