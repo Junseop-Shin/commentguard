@@ -2,28 +2,30 @@ import type { FilterStore } from './types'
 import { DEFAULT_STORE } from './types'
 import { PRESETS } from './presets'
 
-const STORAGE_KEY = 'yt-comment-filter'
+const STORAGE_KEY = 'yt-comment-filter'       // settings, keywords, nicknames, presets
+const STORAGE_KEY_STATS = 'yt-cf-stats'        // stats isolated so saveStore never clobbers them
 
 export async function loadStore(): Promise<FilterStore> {
   return new Promise((resolve) => {
-    chrome.storage.local.get(STORAGE_KEY, (result) => {
+    chrome.storage.local.get([STORAGE_KEY, STORAGE_KEY_STATS], (result) => {
       if (chrome.runtime.lastError) {
         console.error('[YT Filter] loadStore error:', chrome.runtime.lastError)
         resolve({ ...DEFAULT_STORE, presets: JSON.parse(JSON.stringify(PRESETS)) })
         return
       }
-      if (result[STORAGE_KEY]) {
-        resolve(result[STORAGE_KEY] as FilterStore)
-      } else {
-        resolve({ ...DEFAULT_STORE, presets: JSON.parse(JSON.stringify(PRESETS)) })
-      }
+      const settings = result[STORAGE_KEY] ?? { ...DEFAULT_STORE, presets: JSON.parse(JSON.stringify(PRESETS)) }
+      const stats = result[STORAGE_KEY_STATS] ?? DEFAULT_STORE.stats
+      resolve({ ...settings, stats } as FilterStore)
     })
   })
 }
 
+// saveStore intentionally omits stats — stats live in STORAGE_KEY_STATS to prevent
+// the popup overwriting stat increments that arrived while the popup was open.
 export async function saveStore(store: FilterStore): Promise<void> {
+  const { stats: _stats, ...settingsOnly } = store
   return new Promise((resolve) => {
-    chrome.storage.local.set({ [STORAGE_KEY]: store }, () => {
+    chrome.storage.local.set({ [STORAGE_KEY]: settingsOnly }, () => {
       if (chrome.runtime.lastError) {
         console.error('[YT Filter] saveStore error:', chrome.runtime.lastError)
       }
@@ -43,14 +45,14 @@ function _flushStats(): void {
   for (const key of Object.keys(_statQueue)) delete _statQueue[key]
   if (Object.keys(toFlush).length === 0) return
 
-  chrome.storage.local.get(STORAGE_KEY, (result) => {
+  chrome.storage.local.get(STORAGE_KEY_STATS, (result) => {
     if (chrome.runtime.lastError) return
-    const store: FilterStore = result[STORAGE_KEY] ?? { ...DEFAULT_STORE, presets: JSON.parse(JSON.stringify(PRESETS)) }
+    const stats = result[STORAGE_KEY_STATS] ?? DEFAULT_STORE.stats
     for (const [kw, count] of Object.entries(toFlush)) {
-      store.stats.total += count
-      store.stats.byKeyword[kw] = (store.stats.byKeyword[kw] ?? 0) + count
+      stats.total += count
+      stats.byKeyword[kw] = (stats.byKeyword[kw] ?? 0) + count
     }
-    chrome.storage.local.set({ [STORAGE_KEY]: store })
+    chrome.storage.local.set({ [STORAGE_KEY_STATS]: stats })
   })
 }
 
@@ -63,7 +65,10 @@ export function incrementStat(keyword: string): void {
 }
 
 export async function resetStats(): Promise<void> {
-  const store = await loadStore()
-  store.stats = { total: 0, byKeyword: {}, since: Date.now() }
-  await saveStore(store)
+  return new Promise((resolve) => {
+    chrome.storage.local.set(
+      { [STORAGE_KEY_STATS]: { total: 0, byKeyword: {}, since: Date.now() } },
+      () => { resolve() },
+    )
+  })
 }

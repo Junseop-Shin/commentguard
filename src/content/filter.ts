@@ -52,7 +52,9 @@ export function shouldBlock(
 }
 
 function matchKeyword(text: string, keyword: string, useChosung: boolean): boolean {
-  if (text.includes(keyword)) return true
+  // Normalize keyword to match how text was normalized (strips spaces/special chars)
+  const normalizedKeyword = normalize(keyword)
+  if (text.includes(normalizedKeyword)) return true
   if (useChosung && isChosungOnly(keyword)) {
     return getChoseong(text).includes(keyword)
   }
