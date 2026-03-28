@@ -59,11 +59,19 @@ function processComment(el: HTMLElement): void {
   const nickname = el.querySelector('#author-text')?.textContent?.trim() ?? ''
 
   const blockedBy = shouldBlock(text, nickname, store)
+  const wasBlocked = el.dataset.blockedBy !== undefined
 
   if (blockedBy) {
     el.style.display = 'none'
     el.dataset.blockedBy = blockedBy
-    incrementStat(blockedBy)
+    if (!wasBlocked) {
+      // Only count on first block — avoids double-counting on processExisting re-runs
+      incrementStat(blockedBy)
+    }
+  } else if (wasBlocked) {
+    // Restore comment when filter is disabled or keyword removed
+    el.style.display = ''
+    delete el.dataset.blockedBy
   }
 }
 

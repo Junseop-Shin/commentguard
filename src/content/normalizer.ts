@@ -19,6 +19,3 @@ export function normalize(text: string): string {
   return result
 }
 
-export function normalizePair(text: string): { original: string; normalized: string } {
-  return { original: text, normalized: normalize(text) }
-}
