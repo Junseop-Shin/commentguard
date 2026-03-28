@@ -72,9 +72,8 @@ function injectStyles(): void {
 
 // ── Blind / Unblind ───────────────────────────────────────────────────────────
 
-function reasonLabel(blockedBy: string): string {
-  if (blockedBy === BOT_BLOCKED) return '봇 패턴 감지'
-  return `"${blockedBy}" 필터링`
+function reasonLabel(_blockedBy: string): string {
+  return '필터링 된 댓글입니다'
 }
 
 function blindComment(el: HTMLElement, blockedBy: string): void {
