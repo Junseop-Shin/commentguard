@@ -4,8 +4,11 @@ import type { FilterStore } from '../shared/types'
 
 const COMMENT_SELECTOR = 'ytd-comment-view-model, ytd-comment-renderer'
 const PINNED_BADGE_SELECTOR = '#pinned-comment-badge, ytd-pinned-comment-badge-renderer'
+// Targeted container for comments — much less noisy than document.body
+const COMMENTS_CONTAINER_SELECTOR = 'ytd-comments #sections #contents'
 
 let store: FilterStore | null = null
+let activeObserver: MutationObserver | null = null
 
 async function init(): Promise<void> {
   store = await loadStore()
@@ -14,7 +17,13 @@ async function init(): Promise<void> {
 
   // Re-process when navigating to new video (YouTube SPA)
   document.addEventListener('yt-navigate-finish', () => {
-    setTimeout(processExisting, 1000) // wait for comments to render
+    // Disconnect existing observer and re-setup for the new page's comment section
+    activeObserver?.disconnect()
+    activeObserver = null
+    setTimeout(() => {
+      processExisting()
+      observeComments()
+    }, 1000) // wait for comments section to be injected
   })
 
   // Re-process existing comments when store changes
@@ -28,8 +37,12 @@ function processExisting(): void {
   document.querySelectorAll<HTMLElement>(COMMENT_SELECTOR).forEach(processComment)
 }
 
-function observeComments(): void {
-  const observer = new MutationObserver((mutations) => {
+function startTargetedObserver(): boolean {
+  const container = document.querySelector(COMMENTS_CONTAINER_SELECTOR)
+  if (!container) return false
+
+  activeObserver?.disconnect()
+  activeObserver = new MutationObserver((mutations) => {
     requestIdleCallback(() => {
       for (const mutation of mutations) {
         for (const node of mutation.addedNodes) {
@@ -43,8 +56,22 @@ function observeComments(): void {
       }
     })
   })
+  // Observe only direct children — comments section adds threads, not deep subtree mutations
+  activeObserver.observe(container, { childList: true, subtree: true })
+  return true
+}
 
-  observer.observe(document.body, { childList: true, subtree: true })
+function observeComments(): void {
+  // Phase 1: Try to hook directly onto the comments container
+  if (startTargetedObserver()) return
+
+  // Phase 2: Comments not loaded yet — watch body temporarily until the container appears
+  const rootObserver = new MutationObserver((_, obs) => {
+    if (startTargetedObserver()) {
+      obs.disconnect()
+    }
+  })
+  rootObserver.observe(document.body, { childList: true, subtree: true })
 }
 
 function processComment(el: HTMLElement): void {
