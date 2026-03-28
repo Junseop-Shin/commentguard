@@ -12,8 +12,15 @@ async function init(): Promise<void> {
   processExisting()
   observeComments()
 
+  // Re-process when navigating to new video (YouTube SPA)
+  document.addEventListener('yt-navigate-finish', () => {
+    setTimeout(processExisting, 1000) // wait for comments to render
+  })
+
+  // Re-process existing comments when store changes
   chrome.storage.onChanged.addListener(async () => {
     store = await loadStore()
+    processExisting()
   })
 }
 

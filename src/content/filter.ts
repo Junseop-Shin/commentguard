@@ -2,8 +2,9 @@ import { getChoseong } from 'es-hangul'
 import { normalize } from './normalizer'
 import { isBot } from './bot-detector'
 import type { FilterStore } from '../shared/types'
+import { BOT_BLOCKED } from '../shared/types'
 
-export const BOT_BLOCKED = '__bot__'
+export { BOT_BLOCKED }
 
 export function shouldBlock(
   text: string,
@@ -33,16 +34,17 @@ export function shouldBlock(
     }
   }
 
-  // 3. Nickname like filter (uses normalized nickname)
+  // 3. Nickname like filter
   for (const item of store.nicknames) {
     if (!item.enabled) continue
-    if (normalizedNick.includes(item.value)) {
-      return item.value
+    const normalizedItemValue = store.settings.useNormalize ? normalize(item.value) : item.value
+    if (normalizedNick.includes(normalizedItemValue)) {
+      return item.value // return original value for display
     }
   }
 
-  // 4. Bot score (uses normalized text)
-  if (isBot(normalizedText, store.settings.botSensitivity)) {
+  // 4. Bot score — use raw text so URL regex works
+  if (isBot(text, store.settings.botSensitivity)) {
     return BOT_BLOCKED
   }
 

@@ -40,7 +40,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useFilterStore } from '../store/filters'
-import { BOT_BLOCKED } from '../../content/filter'
+import { BOT_BLOCKED } from '../../shared/types'
 
 const fs = useFilterStore()
 

@@ -15,7 +15,7 @@ export interface FilterSettings {
   useNormalize: boolean
   botSensitivity: number      // 0~100, default 70
   protectPinnedComment: boolean
-  showBlockedComments: boolean
+  // showBlockedComments removed - not implemented
 }
 
 export interface FilterStats {
@@ -38,8 +38,9 @@ export const DEFAULT_SETTINGS: FilterSettings = {
   useNormalize: true,
   botSensitivity: 70,
   protectPinnedComment: true,
-  showBlockedComments: false,
 }
+
+export const BOT_BLOCKED = '__bot__'
 
 export const DEFAULT_STORE: FilterStore = {
   enabled: true,
