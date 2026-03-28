@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "YT Comment Filter",
+  "version": "0.1.0",
+  "description": "YouTube comment filter extension",
+  "permissions": ["storage"],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.youtube.com/*"],
+      "js": ["content.js"]
+    }
+  ]
+}
