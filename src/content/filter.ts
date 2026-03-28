@@ -3,6 +3,8 @@ import { normalize } from './normalizer'
 import { isBot } from './bot-detector'
 import type { FilterStore } from '../shared/types'
 
+export const BOT_BLOCKED = '__bot__'
+
 export function shouldBlock(
   text: string,
   nickname: string,
@@ -11,6 +13,7 @@ export function shouldBlock(
   if (!store.enabled) return null
 
   const normalizedText = store.settings.useNormalize ? normalize(text) : text
+  const normalizedNick = store.settings.useNormalize ? normalize(nickname) : nickname
 
   // 1. Custom keywords
   for (const item of store.keywords) {
@@ -30,17 +33,17 @@ export function shouldBlock(
     }
   }
 
-  // 3. Nickname like filter
+  // 3. Nickname like filter (uses normalized nickname)
   for (const item of store.nicknames) {
     if (!item.enabled) continue
-    if (nickname.includes(item.value)) {
+    if (normalizedNick.includes(item.value)) {
       return item.value
     }
   }
 
-  // 4. Bot score
-  if (isBot(text, store.settings.botSensitivity)) {
-    return '__bot__'
+  // 4. Bot score (uses normalized text)
+  if (isBot(normalizedText, store.settings.botSensitivity)) {
+    return BOT_BLOCKED
   }
 
   return null
