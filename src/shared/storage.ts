@@ -1,5 +1,5 @@
 import type { FilterStore } from './types'
-import { DEFAULT_STORE } from './types'
+import { DEFAULT_STORE, DEFAULT_SETTINGS } from './types'
 import { PRESETS } from './presets'
 
 const STORAGE_KEY = 'yt-comment-filter'       // settings, keywords, nicknames, presets
