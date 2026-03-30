@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "YT 댓글 필터",
+  "name": "CommentGuard",
   "version": "1.0.0",
-  "description": "YouTube 댓글을 키워드, 닉네임, 봇 패턴으로 필터링합니다. 한글 초성 검색 지원.",
+  "description": "YouTube comments filtered by keywords, nicknames, and bot patterns. Korean chosung search supported.",
   "permissions": ["storage"],
   "host_permissions": ["https://www.youtube.com/*"],
   "content_scripts": [
