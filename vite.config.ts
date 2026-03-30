@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { resolve } from 'path'
-import { copyFileSync, mkdirSync } from 'fs'
+import { copyFileSync, mkdirSync, readdirSync, existsSync } from 'fs'
 import { fileURLToPath } from 'url'
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
@@ -18,6 +18,16 @@ export default defineConfig({
           resolve(__dirname, 'manifest.json'),
           resolve(distDir, 'manifest.json'),
         )
+        // Copy _locales for chrome.i18n support
+        const localesDir = resolve(__dirname, '_locales')
+        if (existsSync(localesDir)) {
+          for (const lang of readdirSync(localesDir)) {
+            const src = resolve(localesDir, lang, 'messages.json')
+            const destDir = resolve(distDir, '_locales', lang)
+            mkdirSync(destDir, { recursive: true })
+            copyFileSync(src, resolve(destDir, 'messages.json'))
+          }
+        }
       },
     },
   ],
