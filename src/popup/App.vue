@@ -1,5 +1,5 @@
 <template>
-  <div class="p-3 font-sans text-gray-800 dark:text-gray-100 select-none bg-white dark:bg-gray-900">
+  <div class="flex-1 flex flex-col p-3 font-sans text-gray-800 dark:text-gray-100 select-none bg-white dark:bg-gray-900 overflow-hidden">
     <!-- Header -->
     <div class="flex items-center justify-between mb-3">
       <div class="flex items-center gap-2">
@@ -28,7 +28,7 @@
     </div>
 
     <!-- Content -->
-    <div v-if="fs.loaded" class="overflow-y-auto max-h-[400px] pr-0.5">
+    <div v-if="fs.loaded" class="flex-1 overflow-y-auto pr-0.5">
       <FilterTab v-if="activeTab === 'filter'" />
       <StatsTab v-else-if="activeTab === 'stats'" />
     </div>
