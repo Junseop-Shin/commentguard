@@ -4,12 +4,15 @@ import type { FilterStore } from '../shared/types'
 import { BOT_BLOCKED } from '../shared/types'
 
 const COMMENT_SELECTOR = 'ytd-comment-view-model, ytd-comment-renderer'
+const THREAD_SELECTOR = 'ytd-comment-thread-renderer'
 const PINNED_BADGE_SELECTOR = '#pinned-comment-badge, ytd-pinned-comment-badge-renderer'
 const COMMENTS_CONTAINER_SELECTOR = 'ytd-comments #sections #contents'
 const PLACEHOLDER_ATTR = 'data-ytf-placeholder'
+const KOREAN_RE = /[가-힣ㄱ-ㅎㅏ-ㅣ]/
 
 let store: FilterStore | null = null
 let activeObserver: MutationObserver | null = null
+let _isSorting = false   // prevents MutationObserver re-entrance during DOM reorder
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 
@@ -160,6 +163,54 @@ function processComment(el: HTMLElement): void {
   }
 }
 
+// ── Korean sort ───────────────────────────────────────────────────────────────
+
+function isKoreanThread(threadEl: HTMLElement): boolean {
+  const text = threadEl.querySelector('#content-text')?.textContent ?? ''
+  return KOREAN_RE.test(text)
+}
+
+function applySort(): void {
+  if (!store?.settings.sortKoreanFirst) return
+  const container = document.querySelector(COMMENTS_CONTAINER_SELECTOR)
+  if (!container) return
+
+  const threads = [...container.querySelectorAll<HTMLElement>(THREAD_SELECTOR)]
+  if (threads.length < 2) return
+
+  // Stamp original DOM order on first sort so we can restore it later
+  threads.forEach((t, i) => { if (!t.dataset.ytfOrigIdx) t.dataset.ytfOrigIdx = String(i) })
+
+  const korean = threads.filter(isKoreanThread)
+  const others  = threads.filter(t => !isKoreanThread(t))
+  if (korean.length === 0 || others.length === 0) return  // nothing to reorder
+
+  _isSorting = true
+  const frag = document.createDocumentFragment()
+  ;[...korean, ...others].forEach(t => frag.appendChild(t))
+  container.appendChild(frag)
+  _isSorting = false
+}
+
+function restoreOriginalOrder(): void {
+  const container = document.querySelector(COMMENTS_CONTAINER_SELECTOR)
+  if (!container) return
+
+  const threads = [...container.querySelectorAll<HTMLElement>(THREAD_SELECTOR)]
+    .filter(t => t.dataset.ytfOrigIdx !== undefined)
+  if (threads.length < 2) return
+
+  threads.sort((a, b) => Number(a.dataset.ytfOrigIdx) - Number(b.dataset.ytfOrigIdx))
+
+  _isSorting = true
+  const frag = document.createDocumentFragment()
+  threads.forEach(t => frag.appendChild(t))
+  container.appendChild(frag)
+  _isSorting = false
+}
+
+// ── Core processing ───────────────────────────────────────────────────────────
+
 function processExisting(): void {
   document.querySelectorAll<HTMLElement>(COMMENT_SELECTOR).forEach(processComment)
 }
@@ -172,17 +223,25 @@ function startTargetedObserver(): boolean {
 
   activeObserver?.disconnect()
   activeObserver = new MutationObserver((mutations) => {
+    if (_isSorting) return  // skip mutations we caused during reorder
     requestIdleCallback(() => {
+      let hadNewComments = false
       for (const mutation of mutations) {
         for (const node of mutation.addedNodes) {
           if (!(node instanceof HTMLElement)) continue
           if (node.matches(COMMENT_SELECTOR)) {
             processComment(node)
+            hadNewComments = true
           } else {
             node.querySelectorAll<HTMLElement>(COMMENT_SELECTOR).forEach(processComment)
+            if (node.matches(THREAD_SELECTOR) || node.querySelector(THREAD_SELECTOR)) {
+              hadNewComments = true
+            }
           }
         }
       }
+      // Re-sort after new comment batch arrives
+      if (hadNewComments) applySort()
     })
   })
   activeObserver.observe(container, { childList: true, subtree: true })
@@ -205,6 +264,7 @@ async function init(): Promise<void> {
   store = await loadStore()
   processExisting()
   observeComments()
+  applySort()
 
   document.addEventListener('yt-navigate-finish', () => {
     activeObserver?.disconnect()
@@ -212,12 +272,19 @@ async function init(): Promise<void> {
     setTimeout(() => {
       processExisting()
       observeComments()
+      applySort()
     }, 1000)
   })
 
   chrome.storage.onChanged.addListener(async () => {
+    const prevSort = store?.settings.sortKoreanFirst ?? false
     store = await loadStore()
     processExisting()
+    if (!store.settings.sortKoreanFirst && prevSort) {
+      restoreOriginalOrder()
+    } else {
+      applySort()
+    }
   })
 }
 

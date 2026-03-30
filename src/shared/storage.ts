@@ -13,9 +13,13 @@ export async function loadStore(): Promise<FilterStore> {
         resolve({ ...DEFAULT_STORE, presets: JSON.parse(JSON.stringify(PRESETS)) })
         return
       }
-      const settings = result[STORAGE_KEY] ?? { ...DEFAULT_STORE, presets: JSON.parse(JSON.stringify(PRESETS)) }
+      const stored = result[STORAGE_KEY]
+      // Merge with defaults so new fields (e.g. sortKoreanFirst) appear even on old installs
+      const settings: FilterStore = stored
+        ? { ...DEFAULT_STORE, ...stored, settings: { ...DEFAULT_SETTINGS, ...stored.settings }, presets: stored.presets ?? JSON.parse(JSON.stringify(PRESETS)) }
+        : { ...DEFAULT_STORE, presets: JSON.parse(JSON.stringify(PRESETS)) }
       const stats = result[STORAGE_KEY_STATS] ?? DEFAULT_STORE.stats
-      resolve({ ...settings, stats } as FilterStore)
+      resolve({ ...settings, stats })
     })
   })
 }

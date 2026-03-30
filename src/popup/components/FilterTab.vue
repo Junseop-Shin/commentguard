@@ -15,6 +15,10 @@
         <span class="text-sm">고정 댓글 보호</span>
         <ToggleSwitch :model-value="fs.store.settings.protectPinnedComment" @update:model-value="fs.updateSetting('protectPinnedComment', $event)" />
       </div>
+      <div class="flex items-center justify-between py-0.5">
+        <span class="text-sm">한국어 댓글 우선 정렬</span>
+        <ToggleSwitch :model-value="fs.store.settings.sortKoreanFirst" @update:model-value="fs.updateSetting('sortKoreanFirst', $event)" />
+      </div>
       <div class="space-y-1 pt-1">
         <div class="flex justify-between text-sm">
           <span>봇 감지 민감도</span>

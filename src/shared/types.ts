@@ -15,7 +15,7 @@ export interface FilterSettings {
   useNormalize: boolean
   botSensitivity: number      // 0~100, default 70
   protectPinnedComment: boolean
-  // showBlockedComments removed - not implemented
+  sortKoreanFirst: boolean    // sort Korean comments to top, default false
 }
 
 export interface FilterStats {
@@ -38,6 +38,7 @@ export const DEFAULT_SETTINGS: FilterSettings = {
   useNormalize: true,
   botSensitivity: 70,
   protectPinnedComment: true,
+  sortKoreanFirst: false,
 }
 
 export const BOT_BLOCKED = '__bot__'
