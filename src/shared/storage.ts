@@ -14,10 +14,14 @@ export async function loadStore(): Promise<FilterStore> {
         return
       }
       const stored = result[STORAGE_KEY]
-      // Merge with defaults so new fields (e.g. sortKoreanFirst) appear even on old installs
+      // Locale-based default: Korean browser → sortKoreanFirst ON, others → OFF
+      const isKoreanLocale = navigator.language.startsWith('ko')
+      const localeDefaults = { ...DEFAULT_SETTINGS, sortKoreanFirst: isKoreanLocale }
+      // Merge with defaults so new fields appear even on old installs.
+      // stored.settings overrides localeDefaults so existing user preference is preserved.
       const settings: FilterStore = stored
-        ? { ...DEFAULT_STORE, ...stored, settings: { ...DEFAULT_SETTINGS, ...stored.settings }, presets: stored.presets ?? JSON.parse(JSON.stringify(PRESETS)) }
-        : { ...DEFAULT_STORE, presets: JSON.parse(JSON.stringify(PRESETS)) }
+        ? { ...DEFAULT_STORE, ...stored, settings: { ...localeDefaults, ...stored.settings }, presets: stored.presets ?? JSON.parse(JSON.stringify(PRESETS)) }
+        : { ...DEFAULT_STORE, settings: localeDefaults, presets: JSON.parse(JSON.stringify(PRESETS)) }
       const stats = result[STORAGE_KEY_STATS] ?? DEFAULT_STORE.stats
       resolve({ ...settings, stats })
     })
