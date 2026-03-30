@@ -31,10 +31,18 @@ function injectStyles(): void {
       color: #777;
       box-sizing: border-box;
     }
+    /* Dark mode: YouTube 자체 다크 토글 */
     html[dark] [data-ytf-placeholder],
     ytd-app[is-dark-theme] [data-ytf-placeholder] {
       background: rgba(255, 255, 255, 0.06);
       color: #aaa;
+    }
+    /* Dark mode: OS / Chrome 테마 연동 */
+    @media (prefers-color-scheme: dark) {
+      [data-ytf-placeholder] {
+        background: rgba(255, 255, 255, 0.06);
+        color: #aaa;
+      }
     }
     [data-ytf-placeholder] .ytf-icon {
       font-style: normal;
@@ -62,6 +70,12 @@ function injectStyles(): void {
     ytd-app[is-dark-theme] [data-ytf-placeholder] .ytf-expand {
       border-color: #555;
       color: #aaa;
+    }
+    @media (prefers-color-scheme: dark) {
+      [data-ytf-placeholder] .ytf-expand {
+        border-color: #555;
+        color: #aaa;
+      }
     }
     [data-ytf-placeholder] .ytf-expand:hover {
       background: rgba(0, 0, 0, 0.08);
